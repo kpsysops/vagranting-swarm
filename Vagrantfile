@@ -11,8 +11,8 @@ Vagrant.configure("2") do |config|
             #Install docker
             sudo yum install -y yum-utils
             sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-            sudo yum install docker-ce docker-ce-cli containerd.io
-            sudo systemctl start docker
+            sudo yum install docker-ce docker-ce-cli containerd.io -y
+            sudo systemctl --now enable docker
             sudo docker run hello-world
             # Setup DNS client with vagranting-dns
             ETH0=$(sudo nmcli connection show | grep eth0 | cut -d ' ' -f 4)
@@ -23,6 +23,31 @@ Vagrant.configure("2") do |config|
             sudo nmcli connection modify $ETH0 ipv4.dns-priority 10
             sudo nmcli connection up $ETH1
             sudo nmcli connection up $ETH0
+            # Swarm init/join script
+            managerIP="10.10.10.21"
+            hostIP=$(hostname -I | grep 10.10.10.2.)
+            
+            #This is only for lab!! In production never provision token like this!
+            if [ $managerIP == $hostIP ]; then
+                sudo docker swarm init    
+                sudo docker swarm join-token manager -q > /tmp/index.html
+                firewall-cmd --permanent --add-port=80
+                firewall-cmd --reload 
+                docker run -d --name -p 80:80 keyhttpd httpd
+                docker cp /tmp/index.html keyhttpd:/var/www/html/index.html
+            
+            else 
+                managerKey=$(curl -s http://10.10.10.21:80/index.html)
+                sudo docker swarm join --token $managerKey
+            fi
+
+
+                
+                #WiP
+
+
+
+
         SHELL
         swarm1.vm.provider "virtualbox" do |vb|
             vb.cpus = "1"
@@ -39,8 +64,8 @@ Vagrant.configure("2") do |config|
         swarm2.vm.provision "shell", inline: <<-SHELL
             sudo yum install -y yum-utils
             sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-            sudo yum install docker-ce docker-ce-cli containerd.io
-            sudo systemctl start docker
+            sudo yum install docker-ce docker-ce-cli containerd.io -y
+            sudo systemctl --now enable docker
             sudo docker run hello-world
              # Setup DNS client with vagranting-dns
              ETH0=$(sudo nmcli connection show | grep eth0 | cut -d ' ' -f 4)
@@ -51,6 +76,19 @@ Vagrant.configure("2") do |config|
              sudo nmcli connection modify $ETH0 ipv4.dns-priority 10
              sudo nmcli connection up $ETH1
              sudo nmcli connection up $ETH0
+             # Swarm init/join script
+             if [ $managerIP == $hostIP ]; then
+                sudo docker swarm init    
+                sudo docker swarm join-token manager -q > /tmp/index.html
+                firewall-cmd --permanent --add-port=80
+                firewall-cmd --reload 
+                docker run -d --name -p 80:80 keyhttpd httpd
+                docker cp /tmp/index.html keyhttpd:/var/www/html/index.html
+            
+            else 
+                managerKey=$(curl -s http://10.10.10.21:80/index.html)
+                sudo docker swarm join --token $managerKey
+            fi
         SHELL
         swarm2.vm.provider "virutalbox" do |vb|
                 vb.cups = "1"
