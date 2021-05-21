@@ -1,5 +1,5 @@
 # vagranting-swarm
-[quickLabs] Setup swarm in VMs on your local workstation with Vagrant 
+[quickLabs] Setup docker-swarm 2 node cluster in VBOX VMs on your local workstation with Vagrant 
 
 
 
